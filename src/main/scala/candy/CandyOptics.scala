@@ -5,7 +5,7 @@ import monocle.{ Lens, Traversal }
 
 trait CandyOptics { this: CandyState =>
 
-  // candy-specific
+  /* candy-specific */
 
   val boardLn: Lens[Game, Board] =
     Game.current ^|-> Level.board
@@ -38,7 +38,7 @@ trait CandyOptics { this: CandyState =>
       (check(_.left) + check(_.right) > n) || (check(_.up) + check(_.down) > n)
     }
 
-  // generic
+  /* generic */
 
   // XXX: check traversal laws!
   def selectCtxTr[K: Order, V](p: K ==>> V => (K, V) => Boolean) =

@@ -35,11 +35,23 @@ trait CandyState {
   case object Blue extends PrimitiveCandy
   case object Purple extends PrimitiveCandy
 
+  sealed trait Dir
+  case object Up extends Dir
+  case object Down extends Dir
+  case object Left extends Dir
+  case object Right extends Dir
+
   case class Pos(i: Int, j: Int) {
-    def down: Pos = Pos(i + 1, j)
-    def up: Pos = Pos(i - 1, j)
-    def left: Pos = Pos(i, j - 1)
-    def right: Pos = Pos(i, j + 1)
+    def move(dir: Dir): Pos = dir match {
+      case Up => Pos(i - 1, j)
+      case Down => Pos(i + 1, j)
+      case Left => Pos(i, j - 1)
+      case Right => Pos(i, j + 1)
+    }
+    def down: Pos = move(Down)
+    def up: Pos = move(Up)
+    def left: Pos = move(Left)
+    def right: Pos = move(Right)
   }
 
   object Pos {
