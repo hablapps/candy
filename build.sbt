@@ -20,3 +20,11 @@ libraryDependencies ++= Seq(
 )
 
 addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
+
+scalacOptions ++= Seq(
+  "-unchecked",
+  "-deprecation",
+  "-feature",
+  "-language:implicitConversions",
+  "-language:postfixOps",
+  "-language:higherKinds")
