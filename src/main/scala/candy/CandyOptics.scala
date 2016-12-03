@@ -10,31 +10,29 @@ trait CandyOptics { this: CandyState =>
   val boardLn: Lens[Game, Board] =
     Game.current ^|-> Level.board
 
+  val heightLn: Lens[Game, Int] =
+    boardLn ^|-> Board.height
+
   val matrixLn: Lens[Game, Pos ==>> Candy] =
     boardLn ^|-> Board.matrix
 
-  def kindTr(kind: Candy): Traversal[Pos ==>> Candy, (Pos, Option[Candy])] =
-    predTr((_, c) => c == kind)
+  def kindTr(kind: Candy): Traversal[Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> selectTr((_, c) => c == kind)
 
-  def lineTr(i: Int): Traversal[Pos ==>> Candy, (Pos, Option[Candy])] =
-    predTr((p, _) => p.i == i)
+  def lineTr(i: Int): Traversal[Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> selectTr((p, _) => p.i == i)
 
-  def columnTr(j: Int): Traversal[Pos ==>> Candy, (Pos, Option[Candy])] =
-    predTr((p, _) => p.j == j)
+  def columnTr(j: Int): Traversal[Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> selectTr((p, _) => p.j == j)
 
-  def gravityTr(height: Int): Traversal [Pos ==>> Candy, (Pos, Option[Candy])] =
-    predCtxTr(mx => {
+  def gravityTr(height: Int): Traversal [Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> selectCtxTr(mx => {
       case (p, _) => p.i < height &&
         (p.i to height).exists(i => mx.notMember(Pos(i, p.j)))
     })
 
-  // XXX: not in scalaz?
-  private def iterateWhile[A](a: A)(f: A => A, p: A => Boolean): List[A] =
-    if (p(a)) a :: iterateWhile(f(a))(f, p) else Nil
-
-  def inarowTr(
-      n: Int): Traversal [Pos ==>> Candy, (Pos, Option[Candy])] =
-    predCtxTr { mx => (p, c) =>
+  def inarowTr(n: Int): Traversal [Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> selectCtxTr { mx => (p, c) =>
       def check(f: Pos => Pos): Int =
         iterateWhile(p)(f, mx.lookup(_).fold(false)(_ == c)).size
       (check(_.left) + check(_.right) > n) || (check(_.up) + check(_.down) > n)
@@ -43,7 +41,7 @@ trait CandyOptics { this: CandyState =>
   // generic
 
   // XXX: check traversal laws!
-  def predCtxTr[K: Order, V](p: K ==>> V => (K, V) => Boolean) =
+  def selectCtxTr[K: Order, V](p: K ==>> V => (K, V) => Boolean) =
     new Traversal[K ==>> V, (K, Option[V])] {
       def modifyF[F[_]: Applicative](
           f: ((K, Option[V])) => F[(K, Option[V])])(
@@ -57,6 +55,10 @@ trait CandyOptics { this: CandyState =>
         }
     }
 
-  def predTr[K: Order, V](p: (K, V) => Boolean) =
-    predCtxTr[K, V](_ => (k, v) => p(k, v))
+  def selectTr[K: Order, V](p: (K, V) => Boolean) =
+    selectCtxTr[K, V](_ => (k, v) => p(k, v))
+
+  // XXX: not in scalaz?
+  private def iterateWhile[A](a: A)(f: A => A, p: A => Boolean): List[A] =
+    if (p(a)) a :: iterateWhile(f(a))(f, p) else Nil
 }
