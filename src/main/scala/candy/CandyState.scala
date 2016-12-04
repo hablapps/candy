@@ -24,20 +24,20 @@ trait CandyState {
     matrix: Pos ==>> Candy)
 
   sealed trait Candy
-  case class HorStriped(candy: SimpleCandy) extends Candy
-  case class VerStriped(candy: SimpleCandy) extends Candy
+  case class HorStriped(candy: RegularCandy) extends Candy
+  case class VerStriped(candy: RegularCandy) extends Candy
   case object ColourBomb extends Candy
-  sealed trait SimpleCandy extends Candy
-  case object Red extends SimpleCandy
-  case object Orange extends SimpleCandy
-  case object Yellow extends SimpleCandy
-  case object Green extends SimpleCandy
-  case object Blue extends SimpleCandy
-  case object Purple extends SimpleCandy
+  sealed trait RegularCandy extends Candy
+  case object Red extends RegularCandy
+  case object Orange extends RegularCandy
+  case object Yellow extends RegularCandy
+  case object Green extends RegularCandy
+  case object Blue extends RegularCandy
+  case object Purple extends RegularCandy
 
   object Candy {
-    implicit class HasKindAux(candy: Candy) {
-      def hasKind(kind: SimpleCandy): Boolean = candy match {
+    implicit class CandyAux(candy: Candy) {
+      def hasKind(kind: RegularCandy): Boolean = candy match {
         case HorStriped(candy) => kind == candy
         case VerStriped(candy) => kind == candy
         case ColourBomb => false

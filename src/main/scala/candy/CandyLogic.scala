@@ -5,6 +5,23 @@ import monocle.{ Lens, Traversal }
 
 trait CandyLogic { this: CandyOptics with CandyState =>
 
+  def react(spark: (Pos, Dir)): State[Game, Unit] =
+    for {
+      _ <- get
+      // morph (bomb) + crushWith + score (can't be determined by the state)
+      // stabilize
+      // are we finish?
+    } yield ()
+
+  def stabilize: State[Game, Unit] =
+    for {
+      _ <- get
+      // crush + score
+      // gravity
+      // populate
+      // stabilize
+    } yield ()
+
   def isReactionTrigger: State[Game, Boolean] =
     gets(inarowTr(3).length(_) != 0)
 
@@ -15,7 +32,7 @@ trait CandyLogic { this: CandyOptics with CandyState =>
       _  <- modify(candyLn(from.move(dir)).set(mx.lookup(from)))
     } yield ()
 
-  def slide(from: Pos, dir: Dir): State[Game, Boolean] =
+  def switch(from: Pos, dir: Dir): State[Game, Boolean] =
     for {
       mx <- gets(matrixLn.get)
       _  <- swap(from, dir)
@@ -37,11 +54,13 @@ trait CandyLogic { this: CandyOptics with CandyState =>
   def crushWith(tr: Traversal[Game, (Pos, Option[Candy])]): State[Game, Unit] =
     modify(tr.modify(kv => (kv._1, None)))
 
-  def crushKind(kind: SimpleCandy): State[Game, Unit] = crushWith(kindTr(kind))
+  def crushKind(kind: RegularCandy): State[Game, Unit] = crushWith(kindTr(kind))
 
   def crushLine(i: Int): State[Game, Unit] = crushWith(lineTr(i))
 
   def crushColumn(j: Int): State[Game, Unit] = crushWith(columnTr(j))
 
-  def crushThree: State[Game, Unit] = crushWith(inarowTr(3))
+  def crushMin(n: Int): State[Game, Unit] = crushWith(inarowTr(n))
+
+  def crushAll: State[Game, Unit] = crushWith(allTr)
 }

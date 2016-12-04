@@ -22,7 +22,7 @@ trait CandyOptics { this: CandyState =>
   def candyLn(pos: Pos): Lens[Game, Option[Candy]] =
     matrixLn ^<-> map2mapzIso[Pos, Candy].reverse ^|-> at(pos)
 
-  def kindTr(kind: SimpleCandy): Traversal[Game, (Pos, Option[Candy])] =
+  def kindTr(kind: RegularCandy): Traversal[Game, (Pos, Option[Candy])] =
     matrixLn ^|->> selectTr((_, c) => c.hasKind(kind))
 
   def lineTr(i: Int): Traversal[Game, (Pos, Option[Candy])] =
@@ -43,6 +43,9 @@ trait CandyOptics { this: CandyState =>
         iterateWhile(p)(f, mx.lookup(_).fold(false)(_ == c)).size
       (check(_.left) + check(_.right) > n) || (check(_.up) + check(_.down) > n)
     }
+
+  val allTr: Traversal[Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> selectTr((_, _) => true)
 
   /* generic */
 
