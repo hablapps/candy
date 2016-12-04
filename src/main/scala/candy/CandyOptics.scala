@@ -1,7 +1,10 @@
 package org.hablapps.candy
 
 import scalaz._, Scalaz._
-import monocle.{ Lens, Traversal }
+
+import monocle.{ Iso, Lens, Traversal }
+import monocle.function.At._
+import monocle.std.map._
 
 trait CandyOptics { this: CandyState =>
 
@@ -15,6 +18,9 @@ trait CandyOptics { this: CandyState =>
 
   val matrixLn: Lens[Game, Pos ==>> Candy] =
     boardLn ^|-> Board.matrix
+
+  def candyLn(pos: Pos): Lens[Game, Option[Candy]] =
+    matrixLn ^<-> map2mapzIso[Pos, Candy].reverse ^|-> at(pos)
 
   def kindTr(kind: Candy): Traversal[Game, (Pos, Option[Candy])] =
     matrixLn ^|->> selectTr((_, c) => c == kind)
@@ -39,6 +45,9 @@ trait CandyOptics { this: CandyState =>
     }
 
   /* generic */
+
+  def map2mapzIso[K: Order, V]: Iso[Map[K, V], K ==>> V] =
+    Iso[Map[K, V], K ==>> V](xs => ==>>.fromList(xs.toList))(_.toList.toMap)
 
   // XXX: check traversal laws!
   def selectCtxTr[K: Order, V](p: K ==>> V => (K, V) => Boolean) =
