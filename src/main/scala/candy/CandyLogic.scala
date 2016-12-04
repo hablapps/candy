@@ -3,26 +3,24 @@ package org.hablapps.candy
 import scalaz._, Scalaz._
 import monocle.{ Lens, Traversal }
 
-trait CandyLogic { this: CandyOptics with CandyState =>
+trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
 
   def react(spark: (Pos, Dir)): State[Game, Unit] =
     for {
-      _ <- get
       // morph (bomb) + crushWith + score (can't be determined by the state)
-      // stabilize
+      _ <- stabilize
       // are we finish?
     } yield ()
 
   def stabilize: State[Game, Unit] =
     for {
-      _ <- get
       // crush + score
       _ <- gravity
       // populate
-      // stabilize
+      _ <- nonStabilized.ifM_(stabilize)
     } yield ()
 
-  def isReactionTrigger: State[Game, Boolean] =
+  def nonStabilized: State[Game, Boolean] =
     gets(inarowTr(3).length(_) != 0)
 
   def swap(from: Pos, dir: Dir): State[Game, Unit] =
@@ -40,7 +38,7 @@ trait CandyLogic { this: CandyOptics with CandyState =>
         case (ColourBomb, _) | (_, ColourBomb) => true
         case _ => false
       }).getOrElse(false)
-      b2 <- isReactionTrigger
+      b2 <- nonStabilized
       _  <- swap(from, dir).whenM(! (b1 || b2))
     } yield b1 || b2
 
