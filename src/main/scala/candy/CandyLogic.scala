@@ -5,7 +5,7 @@ import monocle.{ Lens, Traversal }
 
 trait CandyLogic { this: CandyOptics with CandyState =>
 
-  def isTrigger: State[Game, Boolean] =
+  def isReactionTrigger: State[Game, Boolean] =
     gets(inarowTr(3).length(_) != 0)
 
   def swap(from: Pos, dir: Dir): State[Game, Unit] =
@@ -23,7 +23,7 @@ trait CandyLogic { this: CandyOptics with CandyState =>
         case (ColourBomb, _) | (_, ColourBomb) => true
         case _ => false
       }).getOrElse(false)
-      b2 <- isTrigger
+      b2 <- isReactionTrigger
       _  <- swap(from, dir).whenM(! (b1 || b2))
     } yield b1 || b2
 
@@ -33,10 +33,11 @@ trait CandyLogic { this: CandyOptics with CandyState =>
       _ <- modify(gravityTr(h).modify(kv => (kv._1.down, kv._2)))
     } yield ()
 
+  // TODO: it's not only about putting Nones, think of crushing striped candy
   def crushWith(tr: Traversal[Game, (Pos, Option[Candy])]): State[Game, Unit] =
     modify(tr.modify(kv => (kv._1, None)))
 
-  def crushKind(kind: Candy): State[Game, Unit] = crushWith(kindTr(kind))
+  def crushKind(kind: SimpleCandy): State[Game, Unit] = crushWith(kindTr(kind))
 
   def crushLine(i: Int): State[Game, Unit] = crushWith(lineTr(i))
 
