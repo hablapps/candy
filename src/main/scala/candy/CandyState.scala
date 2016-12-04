@@ -24,10 +24,12 @@ trait CandyState {
     matrix: Pos ==>> Candy)
 
   sealed trait Candy
-  case class HorStriped(candy: RegularCandy) extends Candy
-  case class VerStriped(candy: RegularCandy) extends Candy
+  sealed trait KindedCandy extends Candy
+  sealed trait StripedCandy extends KindedCandy
+  case class HorStriped(candy: RegularCandy) extends StripedCandy
+  case class VerStriped(candy: RegularCandy) extends StripedCandy
   case object ColourBomb extends Candy
-  sealed trait RegularCandy extends Candy
+  sealed trait RegularCandy extends KindedCandy
   case object Red extends RegularCandy
   case object Orange extends RegularCandy
   case object Yellow extends RegularCandy
@@ -42,6 +44,10 @@ trait CandyState {
         case VerStriped(candy) => kind == candy
         case ColourBomb => false
         case candy => kind == candy
+      }
+      def morph(f: RegularCandy => StripedCandy): Candy = candy match {
+        case _: StripedCandy | ColourBomb => candy
+        case c: RegularCandy => f(c)
       }
     }
   }

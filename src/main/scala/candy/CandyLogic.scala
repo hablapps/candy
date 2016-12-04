@@ -50,6 +50,11 @@ trait CandyLogic { this: CandyOptics with CandyState =>
       _ <- modify(gravityTr(h).modify(kv => (kv._1.down, kv._2)))
     } yield ()
 
+  def stripeKind(
+      kind: RegularCandy)(
+      f: RegularCandy => StripedCandy): State[Game, Unit] =
+    modify(kindTr(kind).modify(kv => (kv._1, kv._2.map(_.morph(f)))))
+
   // TODO: it's not only about putting Nones, think of crushing striped candy
   def crushWith(tr: Traversal[Game, (Pos, Option[Candy])]): State[Game, Unit] =
     modify(tr.modify(kv => (kv._1, None)))
