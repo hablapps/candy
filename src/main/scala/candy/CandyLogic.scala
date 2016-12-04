@@ -17,7 +17,7 @@ trait CandyLogic { this: CandyOptics with CandyState =>
     for {
       _ <- get
       // crush + score
-      // gravity
+      _ <- gravity
       // populate
       // stabilize
     } yield ()
@@ -44,10 +44,11 @@ trait CandyLogic { this: CandyOptics with CandyState =>
       _  <- swap(from, dir).whenM(! (b1 || b2))
     } yield b1 || b2
 
-  def fall: State[Game, Unit] =
+  def gravity: State[Game, Unit] =
     for {
       h <- gets(heightLn.get)
       _ <- modify(gravityTr(h).modify(kv => (kv._1.down, kv._2)))
+             .whileM_(gets(gravityTr(h).length(_) != 0))
     } yield ()
 
   def stripeKind(
