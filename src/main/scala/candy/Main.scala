@@ -36,13 +36,14 @@ object Main extends App {
 
   private def printGame(h: Int, w: Int, mx: Pos ==>> Candy) {
     print("   ")
-    println((1 to w).mkString("   "))
-    (1 to w) foreach { j =>
-      print(s"$j ")
-      print(((1 to h) map { i =>
+    println((1 to h).mkString("    "))
+    println()
+    (1 to h) foreach { i =>
+      print(s"$i ")
+      print(((1 to w) map { j =>
         mx.lookup(Pos(i, j)).fold(" - ")(_.toIcon)
       }).mkString(" "))
-      println()
+      println(); println()
     }
   }
 

@@ -28,6 +28,11 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
       mx <- gets(matrixLn.get)
       _  <- modify(candyLn(from).set(mx.lookup(from.move(dir))))
       _  <- modify(candyLn(from.move(dir)).set(mx.lookup(from)))
+      /////
+      game <- get[Game]
+      _ = println(candyLn(from).get(game).map(_.toIcon))
+      _ = println(candyLn(from.move(dir)).get(game).map(_.toIcon))
+      /////
     } yield ()
 
   def switch(from: Pos, dir: Dir): State[Game, Boolean] =
@@ -67,7 +72,7 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
     } yield ()
 
   def stripeKind(
-      kind: RegularCandy)(
+      kind: RegularCandy,
       f: RegularCandy => StripedCandy): State[Game, Unit] =
     modify(kindTr(kind).modify(kv => (kv._1, kv._2.map(_.morph(f)))))
 

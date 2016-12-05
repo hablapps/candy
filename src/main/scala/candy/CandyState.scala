@@ -50,15 +50,15 @@ trait CandyState {
         case c: RegularCandy => f(c)
       }
       def toIcon: String = candy match {
-        case Red => " 🍅 "
-        case Orange => " 🍌 "
-        case Yellow => " 🍋 "
-        case Green => " 🍒 "
-        case Blue => " 🍍 "
-        case Purple => " 🍓 "
-        case ColourBomb => " 🍪 "
-        case HorStriped(c) => "🠈" + c.toIcon + "🠊"
-        case VerStriped(c) => "🠉" + c.toIcon + "🠋"
+        case Red => " 🍅  "
+        case Orange => " 🍌  "
+        case Yellow => " 🍋  "
+        case Green => " 🍒  "
+        case Blue => " 🍍  "
+        case Purple => " 🍓  "
+        case ColourBomb => " 🍪  "
+        case HorStriped(c) => "🢐" + c.toIcon.trim + " 🢒"
+        case VerStriped(c) => "🢓" + c.toIcon.trim + " 🢑"
       }
     }
   }
