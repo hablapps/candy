@@ -21,7 +21,7 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
     } yield ()
 
   def nonStabilized: State[Game, Boolean] =
-    gets(inarowTr(3).length(_) != 0)
+    gets(inarowTr(3).length(_) > 0)
 
   def swap(from: Pos, dir: Dir): State[Game, Unit] =
     for {
@@ -39,6 +39,7 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
         case _ => false
       }).getOrElse(false)
       b2 <- nonStabilized
+      _ = println(b2)
       _  <- swap(from, dir).whenM(! (b1 || b2))
     } yield b1 || b2
 
@@ -46,7 +47,7 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
     for {
       h <- gets(heightLn.get)
       _ <- modify(gravityTr(h).modify(kv => (kv._1.down, kv._2)))
-             .whileM_(gets(gravityTr(h).length(_) != 0))
+             .whileM_(gets(gravityTr(h).length(_) > 0))
     } yield ()
 
   def generateCandy(n: Int): State[Game, List[RegularCandy]] =
@@ -70,9 +71,11 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
       f: RegularCandy => StripedCandy): State[Game, Unit] =
     modify(kindTr(kind).modify(kv => (kv._1, kv._2.map(_.morph(f)))))
 
-  def score(n: Int): State[Game, Unit] = ???
+  def score(crushed: Int): State[Game, Unit] =
+    modify(currentScoreLn.modify(_ + (crushed * 10)))
 
-  def crush: State[Game, Int] = ???
+  def crush: State[Game, Int] =
+    gets(inarowTr(3).length) >>! (_ => crushMin(3))
 
   // TODO: it's not only about putting Nones, think of crushing striped candy
   def crushWith(tr: Traversal[Game, (Pos, Option[Candy])]): State[Game, Unit] =

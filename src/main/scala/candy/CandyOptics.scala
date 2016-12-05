@@ -11,6 +11,9 @@ trait CandyOptics { this: CandyState with CandyUtils =>
   val boardLn: Lens[Game, Board] =
     Game.current ^|-> Level.board
 
+  val currentScoreLn: Lens[Game, Long] =
+    Game.current ^|-> Level.currentScore
+
   val heightLn: Lens[Game, Int] =
     boardLn ^|-> Board.height
 

@@ -21,7 +21,6 @@ trait CandyState {
     width: Int,
     height: Int,
     gen: Stream[RegularCandy],
-    zero: Pos ==>> Candy,
     matrix: Pos ==>> Candy)
 
   sealed trait Candy
@@ -50,6 +49,28 @@ trait CandyState {
         case _: StripedCandy | ColourBomb => candy
         case c: RegularCandy => f(c)
       }
+      def toIcon: String = candy match {
+        case Red => " 🍅 "
+        case Orange => " 🍌 "
+        case Yellow => " 🍋 "
+        case Green => " 🍒 "
+        case Blue => " 🍍 "
+        case Purple => " 🍓 "
+        case ColourBomb => " 🍪 "
+        case HorStriped(c) => "🠈" + c.toIcon + "🠊"
+        case VerStriped(c) => "🠉" + c.toIcon + "🠋"
+      }
+    }
+  }
+
+  object RegularCandy {
+    def fromInt(i: Int): RegularCandy = (i % 6).abs match {
+      case 0 => Red
+      case 1 => Orange
+      case 2 => Yellow
+      case 3 => Green
+      case 4 => Blue
+      case 5 => Purple
     }
   }
 
