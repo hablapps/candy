@@ -1,62 +1,65 @@
 package org.hablapps.candy
 
 import scalaz._, Scalaz._
-import monocle.{ Lens, Traversal }
 
-trait CandyOptics { this: CandyState =>
+import monocle.{ Iso, Lens, Traversal }
+import monocle.function.At._
+import monocle.std.map._
 
-  // candy-specific
+trait CandyOptics { this: CandyState with CandyUtils =>
 
   val boardLn: Lens[Game, Board] =
     Game.current ^|-> Level.board
 
+  val targetScoreLn: Lens[Game, Long] =
+    Game.current ^|-> Level.targetScore
+
+  val currentScoreLn: Lens[Game, Long] =
+    Game.current ^|-> Level.currentScore
+
+  val targetMovesLn: Lens[Game, Int] =
+    Game.current ^|-> Level.targetMoves
+
+  val currentMovesLn: Lens[Game, Int] =
+    Game.current ^|-> Level.currentMoves
+
+  val heightLn: Lens[Game, Int] =
+    boardLn ^|-> Board.height
+
+  val widthLn: Lens[Game, Int] =
+    boardLn ^|-> Board.width
+
   val matrixLn: Lens[Game, Pos ==>> Candy] =
     boardLn ^|-> Board.matrix
 
-  def kindTr(kind: Candy): Traversal[Pos ==>> Candy, (Pos, Option[Candy])] =
-    predTr((_, c) => c == kind)
+  def genLn: Lens[Game, Stream[RegularCandy]] =
+    boardLn ^|-> Board.gen
 
-  def lineTr(i: Int): Traversal[Pos ==>> Candy, (Pos, Option[Candy])] =
-    predTr((p, _) => p.i == i)
+  def candyLn(pos: Pos): Lens[Game, Option[Candy]] =
+    matrixLn ^<-> map2mapzIso[Pos, Candy].reverse ^|-> at(pos)
 
-  def columnTr(j: Int): Traversal[Pos ==>> Candy, (Pos, Option[Candy])] =
-    predTr((p, _) => p.j == j)
+  def kindTr(kind: RegularCandy): Traversal[Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> selectTr((_, c) => c.hasKind(kind))
 
-  def gravityTr(height: Int): Traversal [Pos ==>> Candy, (Pos, Option[Candy])] =
-    predCtxTr(mx => {
+  def lineTr(i: Int): Traversal[Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> selectTr((p, _) => p.i == i)
+
+  def columnTr(j: Int): Traversal[Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> selectTr((p, _) => p.j == j)
+
+  def gravityTr(height: Int): Traversal [Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> selectCtxTr(mx => {
       case (p, _) => p.i < height &&
         (p.i to height).exists(i => mx.notMember(Pos(i, p.j)))
     })
 
-  // XXX: not in scalaz?
-  private def iterateWhile[A](a: A)(f: A => A, p: A => Boolean): List[A] =
-    if (p(a)) a :: iterateWhile(f(a))(f, p) else Nil
-
-  def inarowTr(
-      n: Int): Traversal [Pos ==>> Candy, (Pos, Option[Candy])] =
-    predCtxTr { mx => (p, c) =>
+  def inarowTr(n: Int): Traversal [Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> selectCtxTr { mx => (p, c) =>
       def check(f: Pos => Pos): Int =
         iterateWhile(p)(f, mx.lookup(_).fold(false)(_ == c)).size
       (check(_.left) + check(_.right) > n) || (check(_.up) + check(_.down) > n)
     }
 
-  // generic
-
-  // XXX: check traversal laws!
-  def predCtxTr[K: Order, V](p: K ==>> V => (K, V) => Boolean) =
-    new Traversal[K ==>> V, (K, Option[V])] {
-      def modifyF[F[_]: Applicative](
-          f: ((K, Option[V])) => F[(K, Option[V])])(
-          s: K ==>> V): F[K ==>> V] =
-        s.fold[F[K ==>> V]](==>>.empty.pure[F]) { (k, v, acc) =>
-          val fv = if (p(s)(k, v)) f(k, v.some) else (k, v.some).pure[F]
-          (acc |@| fv) {
-            case (s2, (k2, Some(v))) => s2 + (k2 -> v)
-            case (s2, (k2, None)) => s2 - k2
-          }
-        }
-    }
-
-  def predTr[K: Order, V](p: (K, V) => Boolean) =
-    predCtxTr[K, V](_ => (k, v) => p(k, v))
+  val allTr: Traversal[Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> selectTr((_, _) => true)
 }
