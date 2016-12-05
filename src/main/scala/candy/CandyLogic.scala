@@ -14,9 +14,9 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
 
   def stabilize: State[Game, Unit] =
     for {
-      // crush + score
+      _ <- crush >>= score
       _ <- gravity
-      // populate
+      _ <- populate
       _ <- nonStabilized.ifM_(stabilize)
     } yield ()
 
@@ -49,10 +49,30 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
              .whileM_(gets(gravityTr(h).length(_) != 0))
     } yield ()
 
+  def generateCandy(n: Int): State[Game, List[RegularCandy]] =
+    for {
+      xs <- gets(genLn.get).map(_.take(n).toList)
+      _  <- modify(genLn.modify(_.drop(n)))
+    } yield xs
+
+  def populate: State[Game, Unit] =
+    for {
+      mx <- gets(matrixLn.get)
+      h  <- gets(heightLn.get)
+      w  <- gets(widthLn.get)
+      gaps = cartesian(h, w).map(k => Pos(k._1, k._2)).filter(mx.notMember)
+      xs <- generateCandy(gaps.size).map(_.zip(gaps))
+      _  <- xs.traverse_[State[Game, ?]](x => modify(candyLn(x._2).set(x._1.some)))
+    } yield ()
+
   def stripeKind(
       kind: RegularCandy)(
       f: RegularCandy => StripedCandy): State[Game, Unit] =
     modify(kindTr(kind).modify(kv => (kv._1, kv._2.map(_.morph(f)))))
+
+  def score(n: Int): State[Game, Unit] = ???
+
+  def crush: State[Game, Int] = ???
 
   // TODO: it's not only about putting Nones, think of crushing striped candy
   def crushWith(tr: Traversal[Game, (Pos, Option[Candy])]): State[Game, Unit] =

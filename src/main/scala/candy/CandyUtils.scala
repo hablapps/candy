@@ -5,6 +5,14 @@ import monocle._
 
 trait CandyUtils { this: CandyState =>
 
+  /* candy specific */
+
+  def cartesian(h: Int, w: Int): List[(Int, Int)] =
+    (for {
+      i <- 1 to h
+      j <- 1 to w
+    } yield (i, j)).toList
+
   /* scalaz */
 
   implicit class IfMHelper(mb: State[Game, Boolean]) {

@@ -20,6 +20,7 @@ trait CandyState {
   @Lenses case class Board(
     width: Int,
     height: Int,
+    gen: Stream[RegularCandy],
     zero: Pos ==>> Candy,
     matrix: Pos ==>> Candy)
 

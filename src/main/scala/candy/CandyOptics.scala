@@ -8,16 +8,20 @@ import monocle.std.map._
 
 trait CandyOptics { this: CandyState with CandyUtils =>
 
-  /* candy-specific */
-
   val boardLn: Lens[Game, Board] =
     Game.current ^|-> Level.board
 
   val heightLn: Lens[Game, Int] =
     boardLn ^|-> Board.height
 
+  val widthLn: Lens[Game, Int] =
+    boardLn ^|-> Board.width
+
   val matrixLn: Lens[Game, Pos ==>> Candy] =
     boardLn ^|-> Board.matrix
+
+  def genLn: Lens[Game, Stream[RegularCandy]] =
+    boardLn ^|-> Board.gen
 
   def candyLn(pos: Pos): Lens[Game, Option[Candy]] =
     matrixLn ^<-> map2mapzIso[Pos, Candy].reverse ^|-> at(pos)
