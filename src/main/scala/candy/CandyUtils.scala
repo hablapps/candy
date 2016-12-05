@@ -5,7 +5,7 @@ import monocle._
 
 trait CandyUtils { this: CandyState =>
 
-  /* candy specific */
+  /* scalaz */
 
   def cartesian(h: Int, w: Int): List[(Int, Int)] =
     (for {
@@ -13,8 +13,7 @@ trait CandyUtils { this: CandyState =>
       j <- 1 to w
     } yield (i, j)).toList
 
-  /* scalaz */
-
+  // XXX: inference problems when generalizing to `M[_]`
   implicit class IfMHelper(mb: State[Game, Boolean]) {
     def ifM_(mu: State[Game, Unit]): State[Game, Unit] =
       mb.ifM(mu, ().point[State[Game, ?]])

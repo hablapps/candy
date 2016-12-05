@@ -28,11 +28,6 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
       mx <- gets(matrixLn.get)
       _  <- modify(candyLn(from).set(mx.lookup(from.move(dir))))
       _  <- modify(candyLn(from.move(dir)).set(mx.lookup(from)))
-      /////
-      game <- get[Game]
-      _ = println(candyLn(from).get(game).map(_.toIcon))
-      _ = println(candyLn(from.move(dir)).get(game).map(_.toIcon))
-      /////
     } yield ()
 
   def switch(from: Pos, dir: Dir): State[Game, Boolean] =
@@ -44,8 +39,9 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
         case _ => false
       }).getOrElse(false)
       b2 <- nonStabilized
-      _ = println(b2)
-      _  <- swap(from, dir).whenM(! (b1 || b2))
+      ok = b1 || b2
+      _  <- swap(from, dir).whenM(! ok)
+      _  <- modify(currentMovesLn.modify(_ + 1)).whenM(ok)
     } yield b1 || b2
 
   def gravity: State[Game, Unit] =

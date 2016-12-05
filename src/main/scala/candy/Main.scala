@@ -34,25 +34,32 @@ object Main extends App {
     }
   }
 
-  private def printGame(h: Int, w: Int, mx: Pos ==>> Candy) {
-    print("   ")
-    println((1 to h).mkString("    "))
-    println()
-    (1 to h) foreach { i =>
-      print(s"$i ")
-      print(((1 to w) map { j =>
-        mx.lookup(Pos(i, j)).fold(" - ")(_.toIcon)
-      }).mkString(" "))
-      println(); println()
-    }
-  }
-
   def showGame: State[Game, Unit] =
     for {
       h  <- gets(heightLn.get)
       w  <- gets(widthLn.get)
       mx <- gets(matrixLn.get)
-    } yield printGame(h, w, mx)
+      ts <- gets(targetScoreLn.get)
+      cs <- gets(currentScoreLn.get)
+      tm <- gets(targetMovesLn.get)
+      cm <- gets(currentMovesLn.get)
+      _ = {
+        println()
+        print("   ")
+        println((1 to h).mkString("    "))
+        println()
+        (1 to h) foreach { i =>
+          print(s"$i ")
+          print(((1 to w) map { j =>
+            mx.lookup(Pos(i, j)).fold(" - ")(_.toIcon)
+          }).mkString(" "))
+          println(); println()
+        }
+        println(s"# Score: ($cs / $ts)")
+        println(s"# Moves: ($cm / $tm)")
+        println()
+      }
+    } yield ()
 
   import scala.util.Random
 

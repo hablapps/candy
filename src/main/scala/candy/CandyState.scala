@@ -12,7 +12,7 @@ trait CandyState {
 
   @Lenses case class Level(
     targetScore: Long,
-    moves: Int,
+    targetMoves: Int,
     board: Board,
     currentScore: Long = 0,
     currentMoves: Int = 0)
