@@ -20,6 +20,9 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
       _ <- nonStabilized.ifM_(stabilize)
     } yield ()
 
+  def initGame: State[Game, Unit] =
+    stabilize >> modify(currentScoreLn.set(0))
+
   def nonStabilized: State[Game, Boolean] =
     gets(inarowTr(3).length(_) > 0)
 

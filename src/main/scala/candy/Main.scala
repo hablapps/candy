@@ -79,5 +79,5 @@ object Main extends App {
       |                          |___/
       |""".stripMargin)
 
-  (stabilize >> (showGame >> loop)).run(game)
+  (initGame >> (showGame >> loop)).run(game)
 }
