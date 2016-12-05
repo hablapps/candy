@@ -8,7 +8,10 @@ trait CandyState {
   @Lenses case class Game(
     user: String,
     ups: Int,
-    current: Level)
+    levels: Int => Level,
+    current: Level,
+    idle: Boolean = true,
+    last: Int = 0)
 
   @Lenses case class Level(
     targetScore: Long,

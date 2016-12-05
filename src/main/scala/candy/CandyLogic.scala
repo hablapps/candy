@@ -5,14 +5,28 @@ import monocle.{ Lens, Traversal }
 
 trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
 
-  def react(spark: (Pos, Dir)): State[Game, Unit] =
+  def play: State[Game, Boolean] =
     for {
-      // morph (bomb) + crushWith + score (can't be determined by the state)
+      ok <- (gets(Game.idle.get) |@| gets(Game.ups.get).map(_ > 0))(_ && _)
+      _  <- loadCurrent.whenM(ok)
+    } yield ok
+
+  def switch(from: Pos, dir: Dir): State[Game, Boolean] =
+    for {
+      _  <- swap(from, dir)
+      ok <- (isBombInvolved(from, dir) |@| nonStabilized)(_ || _)
+      _  <- if (ok) modify(currentMovesLn.modify(_ + 1)) else undo(from, dir)
+      _  <- stabilize
+    } yield ok
+
+  private def loadCurrent: State[Game, Unit] =
+    for {
+      _ <- gets(Game.last.get) <*> gets(Game.levels.get)
       _ <- stabilize
-      // are we finish?
+      _ <- modify(currentScoreLn.set(0))
     } yield ()
 
-  def stabilize: State[Game, Unit] =
+  private def stabilize: State[Game, Unit] =
     for {
       _ <- crush >>= score
       _ <- gravity
@@ -20,47 +34,43 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
       _ <- nonStabilized.ifM_(stabilize)
     } yield ()
 
-  def initGame: State[Game, Unit] =
-    stabilize >> modify(currentScoreLn.set(0))
+  private def isBombInvolved(from: Pos, dir: Dir): State[Game, Boolean] =
+    for {
+      oc1 <- gets(candyLn(from).get)
+      oc2 <- gets(candyLn(from.move(dir)).get)
+      res = (oc1 |@| oc2) {
+        case (ColourBomb, _) | (_, ColourBomb) => true
+        case _ => false
+      }
+    } yield res.getOrElse(false)
 
-  def nonStabilized: State[Game, Boolean] =
+  private def nonStabilized: State[Game, Boolean] =
     gets(inarowTr(3).length(_) > 0)
 
-  def swap(from: Pos, dir: Dir): State[Game, Unit] =
+  private def swap(from: Pos, dir: Dir): State[Game, Unit] =
     for {
       mx <- gets(matrixLn.get)
       _  <- modify(candyLn(from).set(mx.lookup(from.move(dir))))
       _  <- modify(candyLn(from.move(dir)).set(mx.lookup(from)))
     } yield ()
 
-  def switch(from: Pos, dir: Dir): State[Game, Boolean] =
-    for {
-      mx <- gets(matrixLn.get)
-      _  <- swap(from, dir)
-      b1 = ((mx.lookup(from) |@| mx.lookup(from.move(dir))) {
-        case (ColourBomb, _) | (_, ColourBomb) => true
-        case _ => false
-      }).getOrElse(false)
-      b2 <- nonStabilized
-      ok = b1 || b2
-      _  <- swap(from, dir).whenM(! ok)
-      _  <- modify(currentMovesLn.modify(_ + 1)).whenM(ok)
-    } yield b1 || b2
+  private def undo(from: Pos, dir: Dir): State[Game, Unit] =
+    swap(from, dir)
 
-  def gravity: State[Game, Unit] =
+  private def gravity: State[Game, Unit] =
     for {
       h <- gets(heightLn.get)
       _ <- modify(gravityTr(h).modify(kv => (kv._1.down, kv._2)))
              .whileM_(gets(gravityTr(h).length(_) > 0))
     } yield ()
 
-  def generateCandy(n: Int): State[Game, List[RegularCandy]] =
+  private def generateCandy(n: Int): State[Game, List[RegularCandy]] =
     for {
       xs <- gets(genLn.get).map(_.take(n).toList)
       _  <- modify(genLn.modify(_.drop(n)))
     } yield xs
 
-  def populate: State[Game, Unit] =
+  private def populate: State[Game, Unit] =
     for {
       mx <- gets(matrixLn.get)
       h  <- gets(heightLn.get)
@@ -70,28 +80,33 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
       _  <- xs.traverse_[State[Game, ?]](x => modify(candyLn(x._2).set(x._1.some)))
     } yield ()
 
-  def stripeKind(
+  private def stripeKind(
       kind: RegularCandy,
       f: RegularCandy => StripedCandy): State[Game, Unit] =
     modify(kindTr(kind).modify(kv => (kv._1, kv._2.map(_.morph(f)))))
 
-  def score(crushed: Int): State[Game, Unit] =
+  private def score(crushed: Int): State[Game, Unit] =
     modify(currentScoreLn.modify(_ + (crushed * 10)))
 
-  def crush: State[Game, Int] =
+  private def crush: State[Game, Int] =
     gets(inarowTr(3).length) >>! (_ => crushMin(3))
 
   // TODO: it's not only about putting Nones, think of crushing striped candy
-  def crushWith(tr: Traversal[Game, (Pos, Option[Candy])]): State[Game, Unit] =
+  private def crushWith(tr: Traversal[Game, (Pos, Option[Candy])]): State[Game, Unit] =
     modify(tr.modify(kv => (kv._1, None)))
 
-  def crushKind(kind: RegularCandy): State[Game, Unit] = crushWith(kindTr(kind))
+  private def crushKind(kind: RegularCandy): State[Game, Unit] =
+    crushWith(kindTr(kind))
 
-  def crushLine(i: Int): State[Game, Unit] = crushWith(lineTr(i))
+  private def crushLine(i: Int): State[Game, Unit] =
+    crushWith(lineTr(i))
 
-  def crushColumn(j: Int): State[Game, Unit] = crushWith(columnTr(j))
+  private def crushColumn(j: Int): State[Game, Unit] =
+    crushWith(columnTr(j))
 
-  def crushMin(n: Int): State[Game, Unit] = crushWith(inarowTr(n))
+  private def crushMin(n: Int): State[Game, Unit] =
+    crushWith(inarowTr(n))
 
-  def crushAll: State[Game, Unit] = crushWith(allTr)
+  private def crushAll: State[Game, Unit] =
+    crushWith(allTr)
 }

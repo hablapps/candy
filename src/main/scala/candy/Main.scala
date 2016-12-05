@@ -11,13 +11,16 @@ import CandyCrush._
 object Main extends App {
 
   val switchPat =
-    """\s*switch\s+\(\s*([0-9]+)\s*,\s*([0-9]+)\s*\)\s+(up|down|left|right)\s*""".r
+    """switch\s+\(\s*([0-9]+)\s*,\s*([0-9]+)\s*\)\s+(up|down|left|right)""".r
 
   def loop: State[Game, Unit] = {
     print("candy> ")
-    readLine match {
+    readLine.trim match {
       case "exit" => ().point[State[Game, ?]]
       case "" => loop
+      case "play" => play.ifM(
+        showGame >> loop,
+        { println(s"can't play: already playing or no remaining lifes"); loop })
       case switchPat(i, j, s) => {
         val pos = Pos(i.toInt, j.toInt)
         val dir = s match {
@@ -27,7 +30,7 @@ object Main extends App {
           case "right" => Right
         }
         switch(pos, dir).ifM(
-          stabilize >> (showGame >> loop),
+          showGame >> loop,
           { println(s"invalid switch: '$pos -> $dir'"); loop })
       }
       case wrong => println(s"unknown order: '$wrong'"); loop
@@ -65,8 +68,8 @@ object Main extends App {
 
   val gen = unfold(new Random())(rnd => (rnd.nextInt, rnd).some)
   val board = Board(8, 8, gen.map(RegularCandy.fromInt), ==>>.empty)
-  val level = Level(300, 30, board)
-  val game = Game("jesus", 3, level)
+  val level = Level(300, 10, board)
+  val game = Game("jesus", 1, _ => level, level)
 
   println("""
       |   _____                _          _____                _
@@ -79,5 +82,5 @@ object Main extends App {
       |                          |___/
       |""".stripMargin)
 
-  (initGame >> (showGame >> loop)).run(game)
+  loop.run(game)
 }
