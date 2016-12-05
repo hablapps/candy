@@ -9,6 +9,14 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
     for {
       ok <- (gets(Game.idle.get) |@| gets(Game.ups.get).map(_ > 0))(_ && _)
       _  <- loadCurrent.whenM(ok)
+      _  <- modify(Game.idle.set(false))
+    } yield ok
+
+  def leave: State[Game, Boolean] =
+    for {
+      ok <- gets(Game.idle.get).map(!(_))
+      _  <- modify(Game.ups.modify(_ - 1)).whenM(ok)
+      _  <- modify(Game.idle.set(true))
     } yield ok
 
   def switch(from: Pos, dir: Dir): State[Game, Boolean] =

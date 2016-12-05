@@ -16,8 +16,9 @@ object Main extends App {
   def loop: State[Game, Unit] = {
     print("candy> ")
     readLine.trim match {
-      case "exit" => ().point[State[Game, ?]]
+      case "exit" => leave >| (())
       case "" => loop
+      case "leave" => leave >> loop
       case "play" => play.ifM(
         showGame >> loop,
         { println(s"can't play: already playing or no remaining lifes"); loop })
