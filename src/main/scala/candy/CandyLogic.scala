@@ -196,23 +196,23 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
   private def score(crushed: Int): State[Game, Unit] =
     modify(currentScoreLn.modify(_ + (crushed * 10)))
 
-  private def crushPos(pos: Pos): State[Game, Unit] =
+  private def crushPos(pos: Pos): State[Game, Int] =
     for {
       oc <- gets(candyLn(pos).get)
       _  <- modify(candyLn(pos).set(None))
-      _  <- oc match {
+      ln <- oc match {
         case Some(HorStriped(_)) => crushLine(pos.i)
         case Some(VerStriped(_)) => crushColumn(pos.j)
-        case _ => ().point[State[Game, ?]]
+        case _ => 1.point[State[Game, ?]]
       }
-    } yield ()
+    } yield ln
 
   private def crushWith(
       tr: Traversal[Game, (Pos, Option[Candy])]): State[Game, Int] =
     for {
       ps <- gets(tr.getAll)
-      _  <- ps.map(_._1).traverse_[State[Game, ?]](crushPos)
-    } yield ps.size
+      xs <- ps.map(_._1).traverse[State[Game, ?], Int](crushPos)
+    } yield xs.sum
 
   private def crushKind(kind: RegularCandy): State[Game, Int] =
     crushWith(kindTr(kind))

@@ -85,10 +85,9 @@ trait CandyState {
       case 0 => Red
       case 1 => Orange
       case 2 => Yellow
-      case _ => Yellow
-      // case 3 => Green
-      // case 4 => Blue
-      // case 5 => Purple
+      case 3 => Green
+      case 4 => Blue
+      case 5 => Purple
     }
   }
 
