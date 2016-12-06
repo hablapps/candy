@@ -8,7 +8,10 @@ trait CandyState {
   @Lenses case class Game(
     user: String,
     ups: Int,
-    current: Level)
+    levels: Int => Level,
+    current: Level,
+    idle: Boolean = true,
+    last: Int = 0)
 
   @Lenses case class Level(
     targetScore: Long,
@@ -97,4 +100,11 @@ trait CandyState {
     implicit def orderInstance: Order[Pos] =
       Order.orderBy[Pos, (Int, Int)](p => (p.i, p.j))
   }
+
+  sealed trait SwitchOut
+  case object NotPlaying extends SwitchOut
+  case object InvalidMove extends SwitchOut
+  case object YouLose extends SwitchOut
+  case object YouWin extends SwitchOut
+  case object Ok extends SwitchOut
 }

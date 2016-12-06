@@ -4,10 +4,13 @@ scalaVersion := "2.12.0"
 
 organization := "org.hablapps"
 
+val scalazVersion = "7.2.7"
+
 val monocleVersion = "1.3.2"
 
 libraryDependencies ++= Seq(
-  "org.scalaz" %% "scalaz-core" % "7.2.7",
+  "org.scalaz" %% "scalaz-core" % scalazVersion,
+  "org.scalaz" %% "scalaz-effect" % scalazVersion,
   "org.scalactic" %% "scalactic" % "3.0.1",
   "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   "com.github.julien-truffaut" %% "monocle-core" % monocleVersion,
