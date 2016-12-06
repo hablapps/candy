@@ -56,6 +56,7 @@ trait CandyOptics { this: CandyState with CandyUtils =>
   def inarowTr(n: Int): Traversal [Game, (Pos, Option[Candy])] =
     matrixLn ^|->> selectCtxTr { mx => (p, c) =>
       def check(f: Pos => Pos): Int =
+        // FIXME: doesn't work with striped => hasKind
         iterateWhile(p)(f, mx.lookup(_).fold(false)(_ == c)).size
       (check(_.left) + check(_.right) > n) || (check(_.up) + check(_.down) > n)
     }
