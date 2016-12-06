@@ -7,25 +7,65 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
 
   def play: State[Game, Boolean] =
     for {
-      ok <- (gets(Game.idle.get) |@| gets(Game.ups.get).map(_ > 0))(_ && _)
+      ok <- (isIdle |@| nonZeroUps)(_ && _)
       _  <- loadCurrent.whenM(ok)
-      _  <- modify(Game.idle.set(false))
+      _  <- setPlaying
     } yield ok
 
   def leave: State[Game, Boolean] =
     for {
-      ok <- gets(Game.idle.get).map(!(_))
-      _  <- modify(Game.ups.modify(_ - 1)).whenM(ok)
-      _  <- modify(Game.idle.set(true))
+      ok <- isPlaying
+      _  <- modifyUps(_ - 1).whenM(ok)
+      _  <- setIdle
     } yield ok
 
-  def switch(from: Pos, dir: Dir): State[Game, Boolean] =
-    for {
-      _  <- swap(from, dir)
-      ok <- (isBombInvolved(from, dir) |@| nonStabilized)(_ || _)
-      _  <- if (ok) modify(currentMovesLn.modify(_ + 1)) else undo(from, dir)
-      _  <- stabilize
-    } yield ok
+  def switch(from: Pos, dir: Dir): State[Game, SwitchOut] =
+    isPlaying.ifM(
+      for {
+        _   <- swap(from, dir)
+        vld <- (isBombInvolved(from, dir) |@| nonStabilized)(_ || _)
+        _   <- if (vld) newMove >> stabilize else undo(from, dir)
+        win <- checkWinningCondition
+        _   <- unlockNextLevel.whenM(win)
+        los <- checkLosingCondition
+        _   <- modifyUps(_ - 1).whenM(!win && los)
+        _   <- setIdle.whenM(win || los)
+        ok = if (win) YouWin
+             else if (los) YouLose
+             else if (vld) Ok
+             else InvalidMove
+      } yield ok,
+      (NotPlaying: SwitchOut).pure[State[Game, ?]])
+
+  private def newMove: State[Game, Unit] =
+    modify(currentMovesLn.modify(_ + 1))
+
+  private def unlockNextLevel: State[Game, Unit] =
+    modify(Game.last.modify(_ + 1))
+
+  private def checkWinningCondition: State[Game, Boolean] =
+    (gets(currentScoreLn.get) |@| gets(targetScoreLn.get))(_ >= _)
+
+  private def checkLosingCondition: State[Game, Boolean] =
+    (gets(currentMovesLn.get) |@| gets(targetMovesLn.get))(_ >= _)
+
+  private def modifyUps(f: Int => Int): State[Game, Unit] =
+    modify(Game.ups.modify(f))
+
+  private def setIdle: State[Game, Unit] =
+    modify(Game.idle.set(true))
+
+  private def setPlaying: State[Game, Unit] =
+    modify(Game.idle.set(false))
+
+  private def isIdle: State[Game, Boolean] =
+    gets(Game.idle.get)
+
+  private def isPlaying: State[Game, Boolean] =
+    isIdle.map(!_)
+
+  private def nonZeroUps: State[Game, Boolean] =
+    gets(Game.ups.get).map(_ > 0)
 
   private def loadCurrent: State[Game, Unit] =
     for {

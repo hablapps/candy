@@ -30,9 +30,13 @@ object Main extends App {
           case "left" => Left
           case "right" => Right
         }
-        switch(pos, dir).ifM(
-          showGame >> loop,
-          { println(s"invalid switch: '$pos -> $dir'"); loop })
+        switch(pos, dir) >>= (_ match {
+          case NotPlaying => println(s"not playing"); loop
+          case InvalidMove => println(s"invalid switch: '$pos -> $dir'"); loop
+          case YouLose => println("sorry, you lose!"); loop
+          case YouWin => println("Lucky you, you win!"); loop
+          case _ => showGame >> loop
+        })
       }
       case wrong => println(s"unknown order: '$wrong'"); loop
     }
@@ -69,8 +73,8 @@ object Main extends App {
 
   val gen = unfold(new Random())(rnd => (rnd.nextInt, rnd).some)
   val board = Board(8, 8, gen.map(RegularCandy.fromInt), ==>>.empty)
-  val level = Level(300, 10, board)
-  val game = Game("jesus", 1, _ => level, level)
+  val level = Level(10, 4, board)
+  val game = Game("jesus", 4, _ => level, level)
 
   println("""
       |   _____                _          _____                _
