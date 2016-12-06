@@ -14,7 +14,7 @@ object CandyConsole extends App {
 
   val gen = unfold(new Random())(rnd => (rnd.nextInt, rnd).some)
   val board = Board(9, 9, gen.map(RegularCandy.fromInt), ==>>.empty)
-  val level = Level(5000, 50, board)
+  val level = Level(50000, 500, board)
   var game: Game = Game("jesus", 2, _ => level, level)
 
   def welcome: Unit =

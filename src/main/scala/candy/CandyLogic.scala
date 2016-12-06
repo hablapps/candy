@@ -24,6 +24,7 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
       for {
         _   <- swap(from, dir)
         vld <- (isBombInvolved(from, dir) |@| nonStabilized)(_ || _)
+        _   <- bombHandling(from, dir)
         _   <- isSpecial.ifM_(specialCrush(from, dir))
         _   <- if (vld) newMove >> stabilize else undo(from, dir)
         win <- checkWinningCondition
@@ -38,9 +39,36 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
       } yield ok,
       (NotPlaying: SwitchOut).pure[State[Game, ?]])
 
+  private def bombHandling(from: Pos, dir: Dir): State[Game, Unit] =
+    for {
+      oc1 <- gets(candyLn(from).get)
+      oc2 <- gets(candyLn(from.move(dir)).get)
+      _    <- ((oc1 |@| oc2) {
+        case (ColourBomb, ColourBomb) => crushAll
+        case (ColourBomb, c: RegularCandy) =>
+          crushPos(from) >> crushKind(c)
+        case (c: RegularCandy, ColourBomb) =>
+          crushPos(from.move(dir)) >> crushKind(c)
+        case (ColourBomb, sc: StripedCandy) =>
+          for {
+            _ <- crushPos(from)
+            _ <- stripeKind(sc.kind, dirToStripe(dir))
+            _ <- crushKind(sc.kind)
+          } yield ()
+        case (sc: StripedCandy, ColourBomb) =>
+          for {
+            _ <- crushPos(from.move(dir))
+            _ <- stripeKind(sc.kind, dirToStripe(dir))
+            _ <- crushKind(sc.kind)
+          } yield ()
+        case _ => ().point[State[Game, ?]]
+      }).getOrElse(().point[State[Game, ?]])
+    } yield ()
+
   private def isSpecial: State[Game, Boolean] =
     gets(inarowTr(4).length).map(_ > 0)
 
+  // TODO: this is pretty ugly, refactor it!
   private def specialGen(
       min: Int,
       from: Pos,
@@ -48,14 +76,15 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
       f: Candy => Candy): State[Game, Unit] =
     for {
       c1 <- gets(candyLn(from).get)
-      _ = println("yeah")
       c2 <- gets(candyLn(from.move(dir)).get)
       cs <- gets(inarowTr(min).getAll).map(_.map(_._1))
       _  <- crushMin(min) >>= score
       _  <- modify(candyLn(from).set(c1.map(f))).whenM(cs contains from)
-      _  <- modify(candyLn(from.move(dir)).set(c2.map(f))).whenM(cs contains from.move(dir))
+      _  <- modify(candyLn(from.move(dir)).set(c2.map(f)))
+              .whenM(cs contains from.move(dir))
     } yield ()
 
+  // TODO: move to state `morph(dir)`
   private def dirToStripe(dir: Dir): RegularCandy => StripedCandy =
     dir match {
       case Up | Down => VerStriped
@@ -166,6 +195,9 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
 
   private def score(crushed: Int): State[Game, Unit] =
     modify(currentScoreLn.modify(_ + (crushed * 10)))
+
+  private def crushPos(pos: Pos): State[Game, Unit] =
+    modify(candyLn(pos).set(None))
 
   // TODO: it's not only about putting Nones, think of crushing striped candy
   private def crushWith(

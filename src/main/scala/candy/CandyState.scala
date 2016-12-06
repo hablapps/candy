@@ -66,14 +66,24 @@ trait CandyState {
     }
   }
 
+  object KindedCandy {
+    implicit class KindedCandyAux(candy: KindedCandy) {
+      def kind: RegularCandy = candy match {
+        case k: RegularCandy => k
+        case HorStriped(k) => k
+        case VerStriped(k) => k
+      }
+    }
+  }
+
   object RegularCandy {
     def fromInt(i: Int): RegularCandy = (i % 6).abs match {
       case 0 => Red
       case 1 => Orange
       case 2 => Yellow
-      case 3 => Green
-      case 4 => Blue
-      case 5 => Purple
+      case 3 => Red //Green
+      case 4 => Red //Blue
+      case 5 => Red //Purple
     }
   }
 
