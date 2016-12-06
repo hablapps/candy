@@ -42,12 +42,10 @@ trait CandyState {
 
   object Candy {
     implicit class CandyAux(candy: Candy) {
-      def hasKind(kind: RegularCandy): Boolean = candy match {
-        case HorStriped(candy) => kind == candy
-        case VerStriped(candy) => kind == candy
-        case ColourBomb => false
-        case candy => kind == candy
-      }
+      def shareKind(other: Candy): Boolean =
+        (candy.kind |@| other.kind)(_ == _).getOrElse(false)
+      def hasKind(kind: RegularCandy): Boolean =
+        candy.kind.fold(false)(_ == kind)
       def morph(f: RegularCandy => StripedCandy): Candy = candy match {
         case _: StripedCandy | ColourBomb => candy
         case c: RegularCandy => f(c)
@@ -62,6 +60,12 @@ trait CandyState {
         case ColourBomb => " 🍪  "
         case HorStriped(c) => "🢐" + c.toIcon.trim + " 🢒"
         case VerStriped(c) => "🢓" + c.toIcon.trim + " 🢑"
+      }
+      def kind: Option[RegularCandy] = candy match {
+        case HorStriped(candy) => candy.some
+        case VerStriped(candy) => candy.some
+        case ColourBomb => Option.empty
+        case regular: RegularCandy => regular.some
       }
     }
   }
@@ -81,9 +85,10 @@ trait CandyState {
       case 0 => Red
       case 1 => Orange
       case 2 => Yellow
-      case 3 => Red //Green
-      case 4 => Red //Blue
-      case 5 => Red //Purple
+      case _ => Yellow
+      // case 3 => Green
+      // case 4 => Blue
+      // case 5 => Purple
     }
   }
 

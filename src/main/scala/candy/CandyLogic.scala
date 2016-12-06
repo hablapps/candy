@@ -197,12 +197,22 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
     modify(currentScoreLn.modify(_ + (crushed * 10)))
 
   private def crushPos(pos: Pos): State[Game, Unit] =
-    modify(candyLn(pos).set(None))
+    for {
+      oc <- gets(candyLn(pos).get)
+      _  <- modify(candyLn(pos).set(None))
+      _  <- oc match {
+        case Some(HorStriped(_)) => crushLine(pos.i)
+        case Some(VerStriped(_)) => crushColumn(pos.j)
+        case _ => ().point[State[Game, ?]]
+      }
+    } yield ()
 
-  // TODO: it's not only about putting Nones, think of crushing striped candy
   private def crushWith(
       tr: Traversal[Game, (Pos, Option[Candy])]): State[Game, Int] =
-    gets(tr.length) >>! (_ => modify(tr.modify(kv => (kv._1, None))))
+    for {
+      ps <- gets(tr.getAll)
+      _  <- ps.map(_._1).traverse_[State[Game, ?]](crushPos)
+    } yield ps.size
 
   private def crushKind(kind: RegularCandy): State[Game, Int] =
     crushWith(kindTr(kind))
