@@ -5,15 +5,15 @@ import scala.util.Random
 
 import scalaz._, Scalaz._
 
-import CandyCrush._
-
 object CandyConsole extends App {
+
+  val system = new CandyCrush
+  import system._
 
   val switchPat =
     """switch\s+\(\s*([0-9]+)\s*,\s*([0-9]+)\s*\)\s+(up|down|left|right)""".r
 
-  val gen = unfold(new Random())(rnd => (rnd.nextInt, rnd).some)
-  val board = Board(9, 9, gen.map(RegularCandy.fromInt), ==>>.empty)
+  val board = Board(5, 8, RNG.simple(0), ==>>.empty)
   val level = Level(50000, 500, board)
   var game: Game = Game("jesus", 2, _ => level, level)
 
@@ -95,7 +95,7 @@ object CandyConsole extends App {
     val cm = currentMovesLn.get(game)
     println()
     print("   ")
-    println((1 to h).mkString("    "))
+    println((1 to w).mkString("    "))
     println()
     (1 to h) foreach { i =>
       print(s"$i ")

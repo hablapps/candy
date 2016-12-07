@@ -3,7 +3,7 @@ package org.hablapps.candy
 import scalaz._, Scalaz._
 import monocle.macros.Lenses
 
-trait CandyState {
+trait CandyState { this: CandyUtils =>
 
   @Lenses case class Game(
     user: String,
@@ -21,9 +21,9 @@ trait CandyState {
     currentMoves: Int = 0)
 
   @Lenses case class Board(
-    width: Int,
     height: Int,
-    gen: Stream[RegularCandy],
+    width: Int,
+    rng: RNG,
     matrix: Pos ==>> Candy)
 
   sealed trait Candy

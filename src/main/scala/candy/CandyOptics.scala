@@ -32,8 +32,8 @@ trait CandyOptics { this: CandyState with CandyUtils =>
   val matrixLn: Lens[Game, Pos ==>> Candy] =
     boardLn ^|-> Board.matrix
 
-  def genLn: Lens[Game, Stream[RegularCandy]] =
-    boardLn ^|-> Board.gen
+  def rngLn: Lens[Game, RNG] =
+    boardLn ^|-> Board.rng
 
   def candyLn(pos: Pos): Lens[Game, Option[Candy]] =
     matrixLn ^<-> map2mapzIso[Pos, Candy].reverse ^|-> at(pos)

@@ -5,13 +5,30 @@ import monocle._
 
 trait CandyUtils { this: CandyState =>
 
-  /* scalaz */
+  /* scala */
+
+  trait RNG {
+    def nextInt: (Int, RNG)
+  }
+
+  object RNG {
+    def simple(seed: Long): RNG = new RNG {
+      def nextInt = {
+        val seed2 = (seed*0x5DEECE66DL + 0xBL) &
+                    ((1L << 48) - 1)
+        ((seed2 >>> 16).asInstanceOf[Int],
+         simple(seed2))
+      }
+    }
+  }
 
   def cartesian(h: Int, w: Int): List[(Int, Int)] =
     (for {
       i <- 1 to h
       j <- 1 to w
     } yield (i, j)).toList
+
+  /* scalaz */
 
   // XXX: inference problems when generalizing to `M[_]`
   implicit class IfMHelper(mb: State[Game, Boolean]) {
@@ -22,6 +39,9 @@ trait CandyUtils { this: CandyState =>
   // XXX: not in scalaz?
   def iterateWhile[A](a: A)(f: A => A, p: A => Boolean): List[A] =
     if (p(a)) a :: iterateWhile(f(a))(f, p) else Nil
+
+  def iterateN[M[_]: Monad, A](m: M[A], n: Int): M[List[A]] =
+    if (n > 0) m >>= (a => iterateN(m, n-1).map(a :: _)) else List.empty.point[M]
 
   /* monocle */
 

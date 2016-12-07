@@ -1,6 +1,6 @@
 package org.hablapps.candy
 
-object CandyCrush extends CandyLogic
+class CandyCrush extends CandyLogic
   with CandyOptics
   with CandyState
   with CandyUtils

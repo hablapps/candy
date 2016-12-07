@@ -172,11 +172,15 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
              .whileM_(gets(gravityTr(h).length(_) > 0))
     } yield ()
 
-  private def generateCandy(n: Int): State[Game, List[RegularCandy]] =
+  private def generateCandy: State[Game, RegularCandy] =
     for {
-      xs <- gets(genLn.get).map(_.take(n).toList)
-      _  <- modify(genLn.modify(_.drop(n)))
-    } yield xs
+      r <- gets(rngLn.get)
+      (i, r2) = r.nextInt
+      _ <- modify(rngLn.set(r2))
+    } yield RegularCandy.fromInt(i)
+
+  private def generateCandy(n: Int): State[Game, List[RegularCandy]] =
+    iterateN[State[Game, ?], RegularCandy](generateCandy, n)
 
   private def populate: State[Game, Unit] =
     for {
@@ -194,7 +198,7 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
     modify(kindTr(kind).modify(kv => (kv._1, kv._2.map(_.morph(f)))))
 
   private def score(crushed: Int): State[Game, Unit] =
-    modify(currentScoreLn.modify(_ + (crushed * 10)))
+    modify(currentScoreLn.modify(_ + (crushed * 20)))
 
   private def crushPos(pos: Pos): State[Game, Int] =
     for {
