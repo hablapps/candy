@@ -50,13 +50,14 @@ trait CandyState { this: CandyUtils =>
         case _: StripedCandy | ColourBomb => candy
         case c: RegularCandy => f(c)
       }
+      import Colour._
       def toIcon: String = candy match {
-        case Red => " 🍅  "
-        case Orange => " 🍌  "
-        case Yellow => " 🍋  "
-        case Green => " 🍒  "
-        case Blue => " 🍍  "
-        case Purple => " 🍓  "
+        case Red => s"$ANSI_RED 🍅  $ANSI_RESET"
+        case Orange => s"$ANSI_YELLOW 🍌  $ANSI_RESET"
+        case Yellow => s"$ANSI_GREEN 🍋  $ANSI_RESET"
+        case Green => s"$ANSI_CYAN 🍒  $ANSI_RESET"
+        case Blue => s"$ANSI_BLUE 🍍  $ANSI_RESET"
+        case Purple => s"$ANSI_PURPLE 🍓  $ANSI_RESET"
         case ColourBomb => " 🍪  "
         case HorStriped(c) => "🢐" + c.toIcon.trim + " 🢒"
         case VerStriped(c) => "🢓" + c.toIcon.trim + " 🢑"
