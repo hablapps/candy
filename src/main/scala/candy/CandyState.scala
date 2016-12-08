@@ -51,15 +51,15 @@ trait CandyState { this: CandyUtils =>
         case c: RegularCandy => f(c)
       }
       import Colour._
-      def colour: String = candy match {
+      def ansiColour: String = candy match {
         case Red => ANSI_RED
         case Orange => ANSI_YELLOW
         case Yellow => ANSI_GREEN
         case Green => ANSI_CYAN
         case Blue => ANSI_BLUE
         case Purple => ANSI_PURPLE
-        case HorStriped(c) => c.colour
-        case VerStriped(c) => c.colour
+        case HorStriped(c) => c.ansiColour
+        case VerStriped(c) => c.ansiColour
         case _ => ""
       }
       def toIcon: String = candy match {
@@ -97,10 +97,9 @@ trait CandyState { this: CandyUtils =>
       case 0 => Red
       case 1 => Orange
       case 2 => Yellow
-      // case 3 => Green
-      // case 4 => Blue
-      // case 5 => Purple
-      case _ => Orange
+      case 3 => Green
+      case 4 => Blue
+      case 5 => Purple
     }
   }
 

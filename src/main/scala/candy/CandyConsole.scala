@@ -102,7 +102,7 @@ object CandyConsole extends App {
       print(((1 to w) map { j =>
         mx.lookup(Pos(i, j)).fold("-") { c =>
           val s = if (c.toIcon.size == 2) s" ${c.toIcon}  " else c.toIcon
-          s"${c.colour}$s${Colour.ANSI_RESET}"
+          s"${c.ansiColour}$s${Colour.ANSI_RESET}"
         }
       }).mkString(" "))
       println(); println()

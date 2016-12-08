@@ -50,7 +50,7 @@ trait CandyOptics { this: CandyState with CandyUtils =>
   def gravityTr(height: Int): Traversal [Game, (Pos, Option[Candy])] =
     matrixLn ^|->> selectCtxTr(mx => {
       case (p, _) => p.i < height &&
-        (p.i to height).exists(i => mx.notMember(Pos(i, p.j)))
+        ((p.i + 1) to height).exists(i => mx.notMember(Pos(i, p.j)))
     })
 
   def inarowTr(n: Int): Traversal [Game, (Pos, Option[Candy])] =
