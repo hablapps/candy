@@ -29,37 +29,37 @@ trait CandyOptics { this: CandyState with CandyUtils =>
   val widthLn: Lens[Game, Int] =
     boardLn ^|-> Board.width
 
-  val matrixLn: Lens[Game, Pos ==>> Candy] =
+  val matrixLn: Lens[Game, Map[Pos, Candy]] =
     boardLn ^|-> Board.matrix
 
   def rngLn: Lens[Game, RNG] =
     boardLn ^|-> Board.rng
 
   def candyLn(pos: Pos): Lens[Game, Option[Candy]] =
-    matrixLn ^<-> map2mapzIso[Pos, Candy].reverse ^|-> at(pos)
+    matrixLn ^|-> at(pos)
 
-  def kindTr(kind: RegularCandy): Traversal[Game, (Pos, Option[Candy])] =
-    matrixLn ^|->> selectTr((_, c) => c.hasKind(kind))
+  def kindTr(kind: RegularCandy)(h: Int, w: Int): Traversal[Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> multiAtFilter(allPos(h, w): _*)((_, oc) => oc.fold(false)(_.hasKind(kind)))
 
-  def lineTr(i: Int): Traversal[Game, (Pos, Option[Candy])] =
-    matrixLn ^|->> selectTr((p, _) => p.i == i)
+  def lineTr(i: Int)(h: Int, w: Int): Traversal[Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> multiAtFilter(allPos(h, w): _*)((p, _) => p.i == i)
 
-  def columnTr(j: Int): Traversal[Game, (Pos, Option[Candy])] =
-    matrixLn ^|->> selectTr((p, _) => p.j == j)
+  def columnTr(j: Int)(h: Int, w: Int): Traversal[Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> multiAtFilter(allPos(h, w): _*)((p, _) => p.j == j)
 
-  def gravityTr(height: Int): Traversal [Game, (Pos, Option[Candy])] =
-    matrixLn ^|->> selectCtxTr(mx => {
-      case (p, _) => p.i < height &&
-        ((p.i + 1) to height).exists(i => mx.notMember(Pos(i, p.j)))
+  def gravityTr(h: Int, w: Int): Traversal [Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> multiAtFilterCtx(allPos(h, w): _*)(mx => {
+      case (p, oc) => oc.isDefined && p.i < h &&
+        ((p.i + 1) to h).exists(i => ! mx.isDefinedAt(Pos(i, p.j)))
     })
 
-  def inarowTr(n: Int): Traversal [Game, (Pos, Option[Candy])] =
-    matrixLn ^|->> selectCtxTr { mx => (p, c) =>
+  def inarowTr(n: Int)(h: Int, w: Int): Traversal [Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> multiAtFilterCtx(allPos(h, w): _*) { mx => (p, oc) =>
       def check(f: Pos => Pos): Int =
-        iterateWhile(p)(f, mx.lookup(_).fold(false)(_.shareKind(c))).size
+        iterateWhile(p)(f, pos => oc.fold(false)(c => mx.get(pos).fold(false)(_.shareKind(c)))).size
       (check(_.left) + check(_.right) > n) || (check(_.up) + check(_.down) > n)
     }
 
-  val allTr: Traversal[Game, (Pos, Option[Candy])] =
-    matrixLn ^|->> selectTr((_, _) => true)
+  def allTr(h: Int, w: Int): Traversal[Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> multiAtFilter(allPos(h, w): _*)((_, _) => true)
 }

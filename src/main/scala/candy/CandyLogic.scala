@@ -66,7 +66,11 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
     } yield ()
 
   private def isSpecial: State[Game, Boolean] =
-    gets(inarowTr(4).length).map(_ > 0)
+    for {
+      h <- gets(heightLn.get)
+      w <- gets(widthLn.get)
+      b <- gets(inarowTr(4)(h, w).length).map(_ > 0)
+    } yield b
 
   // TODO: this is pretty ugly, refactor it!
   private def specialGen(
@@ -75,9 +79,11 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
       dir: Dir,
       f: Candy => Candy): State[Game, Unit] =
     for {
+      h  <- gets(heightLn.get)
+      w  <- gets(widthLn.get)
       c1 <- gets(candyLn(from).get)
       c2 <- gets(candyLn(from.move(dir)).get)
-      cs <- gets(inarowTr(min).getAll).map(_.map(_._1))
+      cs <- gets(inarowTr(min)(h, w).getAll).map(_.map(_._1))
       _  <- crushMin(min) >>= score
       _  <- modify(candyLn(from).set(c1.map(f))).whenM(cs contains from)
       _  <- modify(candyLn(from.move(dir)).set(c2.map(f)))
@@ -153,13 +159,17 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
     } yield res.getOrElse(false)
 
   private def nonStabilized: State[Game, Boolean] =
-    gets(inarowTr(3).length(_) > 0)
+    for {
+      h <- gets(heightLn.get)
+      w <- gets(widthLn.get)
+      c <- gets(inarowTr(3)(h, w).length)
+    } yield c > 0
 
   private def swap(from: Pos, dir: Dir): State[Game, Unit] =
     for {
       mx <- gets(matrixLn.get)
-      _  <- modify(candyLn(from).set(mx.lookup(from.move(dir))))
-      _  <- modify(candyLn(from.move(dir)).set(mx.lookup(from)))
+      _  <- modify(candyLn(from).set(mx.get(from.move(dir))))
+      _  <- modify(candyLn(from.move(dir)).set(mx.get(from)))
     } yield ()
 
   private def undo(from: Pos, dir: Dir): State[Game, Unit] =
@@ -168,8 +178,9 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
   private def gravity: State[Game, Unit] =
     for {
       h <- gets(heightLn.get)
-      _ <- modify(gravityTr(h).modify(kv => (kv._1.down, kv._2)))
-             .whileM_(gets(gravityTr(h).length(_) > 0))
+      w <- gets(widthLn.get)
+      _ <- modify(gravityTr(h, w).modify(kv => (kv._1.down, kv._2)))
+             .whileM_(gets(gravityTr(h, w).length(_) > 0))
     } yield ()
 
   private def generateCandy: State[Game, RegularCandy] =
@@ -187,7 +198,7 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
       mx <- gets(matrixLn.get)
       h  <- gets(heightLn.get)
       w  <- gets(widthLn.get)
-      gaps = cartesian(h, w).map(k => Pos(k._1, k._2)).filter(mx.notMember)
+      gaps = cartesian(h, w).map(k => Pos(k._1, k._2)).filter(! mx.isDefinedAt(_))
       xs <- generateCandy(gaps.size).map(_.zip(gaps))
       _  <- xs.traverse_[State[Game, ?]](x => modify(candyLn(x._2).set(x._1.some)))
     } yield ()
@@ -195,7 +206,11 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
   private def stripeKind(
       kind: RegularCandy,
       f: RegularCandy => StripedCandy): State[Game, Unit] =
-    modify(kindTr(kind).modify(kv => (kv._1, kv._2.map(_.morph(f)))))
+    for {
+      h <- gets(heightLn.get)
+      w <- gets(widthLn.get)
+      _ <- modify(kindTr(kind)(h, w).modify(kv => (kv._1, kv._2.map(_.morph(f)))))
+    } yield ()
 
   private def score(crushed: Int): State[Game, Unit] =
     modify(currentScoreLn.modify(_ + (crushed * 20)))
@@ -212,9 +227,11 @@ trait CandyLogic { this: CandyOptics with CandyState with CandyUtils =>
     } yield ln
 
   private def crushWith(
-      tr: Traversal[Game, (Pos, Option[Candy])]): State[Game, Int] =
+      f: (Int, Int) => Traversal[Game, (Pos, Option[Candy])]): State[Game, Int] =
     for {
-      ps <- gets(tr.getAll)
+      h  <- gets(heightLn.get)
+      w  <- gets(widthLn.get)
+      ps <- gets(f(h, w).getAll)
       xs <- ps.map(_._1).traverse[State[Game, ?], Int](crushPos)
     } yield xs.sum
 
