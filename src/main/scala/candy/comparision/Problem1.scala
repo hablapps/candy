@@ -1,4 +1,4 @@
-package org.hablapps.candy.problem
+package org.hablapps.candy.comparision
 
 object Problem1 {
 
@@ -86,6 +86,9 @@ object Problem1 {
     @Lenses case class Game(
       // ...
       current: Level)
+
+    // val current: Lens[Game, Level] =
+    //   Lens[Game, Level](_.current)(nc => _.copy(current = nc))
 
     @Lenses case class Level(
       // ...

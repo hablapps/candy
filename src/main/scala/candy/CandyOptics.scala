@@ -39,7 +39,9 @@ trait CandyOptics { this: CandyState with CandyUtils =>
     matrixLn ^|-> at(pos)
 
   def kindTr(kind: RegularCandy)(h: Int, w: Int): Traversal[Game, (Pos, Option[Candy])] =
-    matrixLn ^|->> multiAtFilter(allPos(h, w): _*)((_, oc) => oc.fold(false)(_.hasKind(kind)))
+    matrixLn ^|->> multiAtFilter(allPos(h, w): _*) { (_, oc) =>
+      oc.fold(false)(_.hasKind(kind))
+    }
 
   def lineTr(i: Int)(h: Int, w: Int): Traversal[Game, (Pos, Option[Candy])] =
     matrixLn ^|->> multiAtFilter(allPos(h, w): _*)((p, _) => p.i == i)
@@ -59,6 +61,9 @@ trait CandyOptics { this: CandyState with CandyUtils =>
         iterateWhile(p)(f, pos => oc.fold(false)(c => mx.get(pos).fold(false)(_.shareKind(c)))).size
       (check(_.left) + check(_.right) > n) || (check(_.up) + check(_.down) > n)
     }
+
+  def gapTr(n: Int)(h: Int, w: Int): Traversal[Game, (Pos, Option[Candy])] =
+    matrixLn ^|->> multiAtFilter(allPos(h, w): _*)((_, oc) => oc.isEmpty)
 
   def allTr(h: Int, w: Int): Traversal[Game, (Pos, Option[Candy])] =
     matrixLn ^|->> multiAtFilter(allPos(h, w): _*)((_, _) => true)
