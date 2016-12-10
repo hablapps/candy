@@ -5,6 +5,9 @@ import monocle._
 
 trait CandyUtils { this: CandyState =>
 
+  def allPos(h: Int, w: Int): List[Pos] =
+    cartesian(h, w).map(ia => Pos(ia._1, ia._2))
+
   /* scala */
 
   object Colour {
@@ -57,24 +60,26 @@ trait CandyUtils { this: CandyState =>
 
   /* monocle */
 
-  def map2mapzIso[K: Order, V]: Iso[Map[K, V], K ==>> V] =
-    Iso[Map[K, V], K ==>> V](xs => ==>>.fromList(xs.toList))(_.toList.toMap)
+  import monocle.function.At, At._
 
-  // XXX: check traversal laws!
-  def selectCtxTr[K: Order, V](p: K ==>> V => (K, V) => Boolean) =
-    new Traversal[K ==>> V, (K, Option[V])] {
+  def multiAtFilterCtx[I: Order, A](
+      is: I*)(
+      p: Map[I, A] => (I, Option[A]) => Boolean): Traversal[Map[I, A], (I, Option[A])] =
+    new Traversal[Map[I, A], (I, Option[A])] {
       def modifyF[F[_]: Applicative](
-          f: ((K, Option[V])) => F[(K, Option[V])])(
-          s: K ==>> V): F[K ==>> V] =
-        s.fold[F[K ==>> V]](==>>.empty.pure[F]) { (k, v, acc) =>
-          val fv = if (p(s)(k, v)) f(k, v.some) else (k, v.some).pure[F]
+          f: ((I, Option[A])) => F[(I, Option[A])])(
+          s: Map[I, A]): F[Map[I, A]] =
+        is.toList.foldLeft[F[Map[I, A]]](Map.empty.pure[F]) { (acc, i) =>
+          val fv = if (p(s)(i, s.get(i))) f((i, s.get(i))) else (i, s.get(i)).pure[F]
           (acc |@| fv) {
-            case (s2, (k2, Some(v))) => s2 + (k2 -> v)
-            case (s2, (k2, None)) => s2 - k2
+            case (s2, (i2, Some(a2))) => s2 + (i2 -> a2)
+            case (s2, _) => s2
           }
         }
     }
 
-  def selectTr[K: Order, V](p: (K, V) => Boolean) =
-    selectCtxTr[K, V](_ => (k, v) => p(k, v))
+  def multiAtFilter[I: Order, A](
+      is: I*)(
+      p: (I, Option[A]) => Boolean): Traversal[Map[I, A], (I, Option[A])] =
+    multiAtFilterCtx[I, A](is: _*)(_ => (i, oa) => p(i, oa))
 }
