@@ -24,7 +24,7 @@ trait CandyState { this: CandyUtils =>
     height: Int,
     width: Int,
     rng: RNG,
-    matrix: Pos ==>> Candy)
+    matrix: Map[Pos, Candy])
 
   sealed trait Candy
   sealed trait KindedCandy extends Candy

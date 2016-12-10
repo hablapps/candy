@@ -13,7 +13,7 @@ object CandyConsole extends App {
   val switchPat =
     """switch\s+\(\s*([0-9]+)\s*,\s*([0-9]+)\s*\)\s+(up|down|left|right)""".r
 
-  val board = Board(5, 8, RNG.simple(0), ==>>.empty)
+  val board = Board(5, 8, RNG.simple(0), Map.empty)
   val level = Level(50000, 500, board)
   var game: Game = Game("jesus", 2, _ => level, level)
 
@@ -100,7 +100,7 @@ object CandyConsole extends App {
     (1 to h) foreach { i =>
       print(s"$i ")
       print(((1 to w) map { j =>
-        mx.lookup(Pos(i, j)).fold("-") { c =>
+        mx.get(Pos(i, j)).fold("-") { c =>
           val s = if (c.toIcon.size == 2) s" ${c.toIcon}  " else c.toIcon
           s"${c.ansiColour}$s${Colour.ANSI_RESET}"
         }
