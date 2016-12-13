@@ -79,6 +79,7 @@ object Problem1 {
 
   object Lenses {
 
+    import monocle.Lens
     import monocle.macros.Lenses
 
     /* Data Structures */
@@ -103,15 +104,17 @@ object Problem1 {
 
     /* Access Methods */
 
+    val matrixLn: Lens[Game, Map[Pos, Candy]] =
+      current ^|-> board ^|-> matrix
+
     def getMatrix(game: Game): Map[Pos, Candy] =
-      // game.current.board.matrix
-      (current ^|-> board ^|-> matrix).get(game)
+      matrixLn.get(game)
 
     def setMatrix(matrix2: Map[Pos, Candy])(game: Game): Game =
-      (current ^|-> board ^|-> matrix).set(matrix2)(game)
+      matrixLn.set(matrix2)(game)
 
     def modifyMatrix(f: Map[Pos, Candy] => Map[Pos, Candy])(game: Game): Game =
-      (current ^|-> board ^|-> matrix).modify(f)(game)
+      matrixLn.modify(f)(game)
 
     def modifyWidth(f: Int => Int)(game: Game): Game =
       (current ^|-> board ^|-> width).modify(f)(game)

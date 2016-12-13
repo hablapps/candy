@@ -7,37 +7,23 @@ object Problem3 {
 
   object Mutable {
 
+    /* Data Structures */
+
+    case class Game(
+      // ...
+      var currentScore: Long = 0)
+
     /* Data Transformations */
 
-    var game: Game = new Game
+    var game: Game = new Game()
 
-    def crush(): Int = {
-      // ...
-      var n = 3
-      game = ???
-      n
-    }
+    def score(n: Int): Unit =
+      game.currentScore += (n * 20)
 
-    def score(n: Int): Unit = {
-      // ...
-      game = ???
-    }
-
-    def gravity(): Unit = {
-      // ...
-      game = ???
-    }
-
-    def populate(): Unit = {
-      // ...
-      game = ???
-    }
-
-    def notStabilized(): Boolean = {
-      // ...
-      var b = ???
-      b
-    }
+    def crush(): Int = ???
+    def gravity(): Unit = ???
+    def populate(): Unit = ???
+    def notStabilized(): Boolean = ???
 
     /* Composing Transformations... */
 
@@ -51,13 +37,23 @@ object Problem3 {
 
   object Immutable {
 
+    import monocle.macros.Lenses
+
+    /* Data Structures */
+
+    @Lenses case class Game(
+      // ...
+      currentScore: Long)
+
+    import Game.currentScore
+
     /* Data Transformations */
 
     def crush(game: Game): (Game, Int) =
       ???
 
     def score(n: Int)(game: Game): Game =
-      ???
+      currentScore.modify(_ + (n * 20))(game)
 
     def gravity(game: Game): Game =
       ???
@@ -82,19 +78,39 @@ object Problem3 {
   object StateMonad {
 
     import scalaz._, Scalaz._
+    import monocle.macros.Lenses
+    import monocle.state.all._
+
+    /* Data Structures */
+
+    @Lenses case class Game(
+      // ...
+      currentScore: Long)
+
+    import Game.currentScore
 
     /* Data Transformations */
 
     def crush: State[Game, Int] =
+      ???
+
+    def score0(n: Int): State[Game, Unit] =
       for {
-        game <- get[Game]
-        // ...
-        n = 3
-        _ <- put(new Game)
-      } yield n
+        s <- get[Game]
+        ns = currentScore.modify(_ + (n * 20))(s)
+        _ <- put(ns)
+      } yield ()
+
+    def score1(n: Int): State[Game, Unit] =
+      for {
+        _ <- modify(currentScore.modify(_ + (n * 20)))
+      } yield ()
+
+    def score2(n: Int): State[Game, Unit] =
+      modify(currentScore.modify(_ + (n * 20)))
 
     def score(n: Int): State[Game, Unit] =
-      ???
+      currentScore.mod_(_ + (n * 20))
 
     def gravity: State[Game, Unit] =
       ???
@@ -102,18 +118,18 @@ object Problem3 {
     def populate: State[Game, Unit] =
       ???
 
-    def notStabilized(g: Game): Boolean =
+    def notStabilized: State[Game, Boolean] =
       ???
 
     /* Composing Transformations... */
 
     def stabilize: State[Game, Unit] =
       for {
-        _ <- crush >>= score
-        _ <- gravity
-        _ <- populate
-        g <- get
-        _ <- stabilize.whenM(notStabilized(g))
+        _  <- crush >>= score
+        _  <- gravity
+        _  <- populate
+        ns <- notStabilized
+        _  <- stabilize.whenM(ns)
       } yield ()
   }
 }

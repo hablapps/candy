@@ -58,7 +58,9 @@ trait CandyOptics { this: CandyState with CandyUtils =>
   def inarowTr(n: Int)(h: Int, w: Int): Traversal [Game, (Pos, Option[Candy])] =
     matrixLn ^|->> multiAtFilterCtx(allPos(h, w): _*) { mx => (p, oc) =>
       def check(f: Pos => Pos): Int =
-        iterateWhile(p)(f, pos => oc.fold(false)(c => mx.get(pos).fold(false)(_.shareKind(c)))).size
+        iterateWhile(p)(f, { pos =>
+          oc.fold(false)(c => mx.get(pos).fold(false)(_.shareKind(c)))
+        }).size
       (check(_.left) + check(_.right) > n) || (check(_.up) + check(_.down) > n)
     }
 

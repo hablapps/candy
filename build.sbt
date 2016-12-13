@@ -6,7 +6,12 @@ organization := "org.hablapps"
 
 val scalazVersion = "7.2.7"
 
-val monocleVersion = "1.3.2"
+val monocleVersion = "1.4.0-SNAPSHOT"
+
+resolvers ++= Seq(
+  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots")
+)
 
 libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % scalazVersion,
