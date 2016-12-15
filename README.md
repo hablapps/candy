@@ -10,5 +10,5 @@ $ sbt run
 
 candy> play
 
-candy> switch ($i,$j) [up/down/left/right]
+candy> switch ($i,$j) up|down|left|right
 ```
